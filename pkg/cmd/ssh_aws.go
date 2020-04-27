@@ -81,8 +81,6 @@ func sshToAWSNode(nodeName, path, user, pathSSKeypair string, sshPublicKey []byt
 
 	bastionNode := user + "@" + a.BastionIP
 	node := user + "@" + nodeName
-	fmt.Println("Waiting 60 seconds until ports are open.")
-	time.Sleep(60 * time.Second)
 
 	key := filepath.Join(pathSSKeypair, "key")
 	sshCmd := fmt.Sprintf("ssh -i " + key + " -o \"ProxyCommand ssh -W %%h:%%p -i " + key + " -o IdentitiesOnly=yes -o StrictHostKeyChecking=no " + bastionNode + "\" " + node + " -o IdentitiesOnly=yes -o StrictHostKeyChecking=no")
@@ -281,6 +279,23 @@ func (a *AwsInstanceAttribute) createBastionHostInstance() {
 				}
 			}
 			a.BastionIP = ip
+
+			if a.BastionIP != "" {
+				fmt.Println("Waiting 60 seconds until ports are open.")
+				for attemptCnt < 90 {
+					arguments := "aws ec2 describe-instance-status --instance-id " + a.BastionInstanceID + " --filter Name=instance-status.status,Values=ok --output text"
+					captured := capture()
+					operate("aws", arguments)
+					capturedOutput, err = captured()
+					checkError(err)
+					if capturedOutput == "" {
+						time.Sleep(time.Second * 2)
+						attemptCnt++
+					} else {
+						return
+					}
+				}
+			}
 			return
 		}
 		time.Sleep(time.Second * 2)
