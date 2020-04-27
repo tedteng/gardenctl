@@ -209,7 +209,7 @@ func (a *AwsInstanceAttribute) getBastionSecurityGroupID() {
 // getBastionHostInstance gets bastion host instance if it exists
 func (a *AwsInstanceAttribute) getBastionHostInstance() {
 	var err error
-	arguments := fmt.Sprintf("aws ec2 describe-instances --filter Name=vpc-id,Values=%s Name=tag:Name,Values=%s Name=instance-state-name,Values=running --query Reservations[*].Instances[].{Instance:InstanceId} --output text", a.VpcID, a.BastionSecurityGroupName)
+	arguments := fmt.Sprintf("aws ec2 describe-instances --filter Name=vpc-id,Values=%s Name=tag:Name,Values=%s Name=instance-state-name,Values=running --query Reservations[*].Instances[].{Instance:InstanceId} --output text", a.VpcID, a.BastionInstanceName)
 	captured := capture()
 	operate("aws", arguments)
 	a.BastionInstanceID, err = captured()
