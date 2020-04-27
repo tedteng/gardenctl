@@ -317,15 +317,24 @@ func (a *AwsInstanceAttribute) cleanupAwsBastionHost() {
 	checkError(err)
 	fmt.Println(capturedOutput)
 
-	// remove shh rule from ec2 instance
+	// remove ssh rule from ec2 instance
 	fmt.Println("  (2/3) Close SSH Port on Node.")
-	arguments = fmt.Sprintf("aws ec2 revoke-security-group-ingress --group-id %s --protocol tcp --port 22 --cidr 0.0.0.0/0", a.SecurityGroupID)
+	// Check if ssh rule exist
+	arguments = fmt.Sprintf("aws ec2 describe-security-groups --group-id %s  --filters Name=ip-permission.from-port,Values=22", a.SecurityGroupID)
 	captured = capture()
 	operate("aws", arguments)
 	capturedOutput, err = captured()
 	checkError(err)
-	fmt.Println("  Closed SSH Port on Node.")
-	fmt.Println(capturedOutput)
+
+	if len(capturedOutput) > 0 {
+		arguments = fmt.Sprintf("aws ec2 revoke-security-group-ingress --group-id %s --protocol tcp --port 22 --cidr 0.0.0.0/0", a.SecurityGroupID)
+		captured = capture()
+		operate("aws", arguments)
+		capturedOutput, err = captured()
+		checkError(err)
+		fmt.Println("  Closed SSH Port on Node.")
+		fmt.Println(capturedOutput)
+	}
 
 	// clean up bastion security group
 	fmt.Println("  (3/3) Clean up bastion host security group")
