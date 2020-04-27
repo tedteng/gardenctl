@@ -64,6 +64,16 @@ func sshToAWSNode(nodeName, path, user, pathSSKeypair string, sshPublicKey []byt
 	a.createBastionHostSecurityGroup()
 	fmt.Println("")
 
+	// if global flag -c is specified call cleanupAwsBastionHost
+	if cachevar {
+		fmt.Println("(3/4) Creating bastion host - skipping")
+		a.getBastionHostInstance()
+		if a.BastionInstanceID != "" {
+			a.cleanupAwsBastionHost()
+			os.Exit(0)
+		}
+	}
+
 	defer a.cleanupAwsBastionHost()
 
 	fmt.Println("(3/4) Creating bastion host")
@@ -271,6 +281,7 @@ func (a *AwsInstanceAttribute) createBastionHostInstance() {
 				}
 			}
 			a.BastionIP = ip
+			time.Sleep(60 * time.Second)
 			return
 		}
 		time.Sleep(time.Second * 2)
