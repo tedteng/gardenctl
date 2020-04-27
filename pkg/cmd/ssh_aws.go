@@ -68,10 +68,8 @@ func sshToAWSNode(nodeName, path, user, pathSSKeypair string, sshPublicKey []byt
 	if cachevar {
 		fmt.Println("(3/4) Creating bastion host - skipping")
 		a.getBastionHostInstance()
-		if a.BastionInstanceID != "" {
-			a.cleanupAwsBastionHost()
-			os.Exit(0)
-		}
+		a.cleanupAwsBastionHost()
+		os.Exit(0)
 	}
 
 	defer a.cleanupAwsBastionHost()
@@ -334,13 +332,20 @@ func (a *AwsInstanceAttribute) cleanupAwsBastionHost() {
 	fmt.Println("")
 
 	// clean up bastion host instance
-	fmt.Println("  (1/3) Cleaning up bastion host instance")
-	arguments := fmt.Sprintf("aws ec2 terminate-instances --instance-ids %s", a.BastionInstanceID)
+	arguments := "aws ec2 describe-instances --instance-ids " + a.BastionInstanceID + " --output text"
 	captured := capture()
 	operate("aws", arguments)
 	capturedOutput, err := captured()
 	checkError(err)
-	fmt.Println(capturedOutput)
+	if len(capturedOutput) > 0 {
+		fmt.Println("  (1/3) Cleaning up bastion host instance")
+		arguments := fmt.Sprintf("aws ec2 terminate-instances --instance-ids %s", a.BastionInstanceID)
+		captured := capture()
+		operate("aws", arguments)
+		capturedOutput, err := captured()
+		checkError(err)
+		fmt.Println(capturedOutput)
+	}
 
 	// remove ssh rule from ec2 instance
 	fmt.Println("  (2/3) Close SSH Port on Node.")
@@ -350,7 +355,6 @@ func (a *AwsInstanceAttribute) cleanupAwsBastionHost() {
 	operate("aws", arguments)
 	capturedOutput, err = captured()
 	checkError(err)
-
 	if len(capturedOutput) > 0 {
 		arguments = fmt.Sprintf("aws ec2 revoke-security-group-ingress --group-id %s --protocol tcp --port 22 --cidr 0.0.0.0/0", a.SecurityGroupID)
 		captured = capture()
