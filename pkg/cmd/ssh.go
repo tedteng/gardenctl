@@ -36,6 +36,9 @@ const (
 	user = "gardener"
 )
 
+// flag use bastion VM as jump box 
+var bastionVM bool
+
 // NewSSHCmd returns a new ssh command.
 func NewSSHCmd(reader TargetReader, ioStreams IOStreams) *cobra.Command {
 	cmd := &cobra.Command{
@@ -84,24 +87,31 @@ func NewSSHCmd(reader TargetReader, ioStreams IOStreams) *cobra.Command {
 			fmt.Println("Downloaded id_rsa key")
 
 			sshPublicKey := sshKeypairSecret.Data["id_rsa.pub"]
-			infraType := shoot.Spec.Provider.Type
-			switch infraType {
-			case "aws":
-				sshToAWSNode(args[0], path, user, pathSSKeypair, sshPublicKey)
-			case "gcp":
-				sshToGCPNode(args[0], path, user, pathSSKeypair, sshPublicKey)
-			case "azure":
-				sshToAZNode(args[0], path, user, pathSSKeypair, sshPublicKey)
-			case "alicloud":
-				sshToAlicloudNode(args[0], path, user, sshPublicKey)
-			case "openstack":
-			default:
-				return fmt.Errorf("infrastructure type %q not found", infraType)
-			}
 
+			if bastionVM {
+				infraType := shoot.Spec.Provider.Type
+				switch infraType {
+				case "aws":
+					sshToAWSNode(args[0], path, user, pathSSKeypair, sshPublicKey)
+				case "gcp":
+					sshToGCPNode(args[0], path, user, pathSSKeypair, sshPublicKey)
+				case "azure":
+					sshToAZNode(args[0], path, user, pathSSKeypair, sshPublicKey)
+				case "alicloud":
+					sshToAlicloudNode(args[0], path, user, sshPublicKey)
+				case "openstack":
+				default:
+					return fmt.Errorf("infrastructure type %q not found", infraType)
+				}
+			} else {
+				sshToPod(args[0], path, user, pathSSKeypair, sshPublicKey)
+			}
 			return nil
 		},
 	}
+
+
+	cmd.Flags().BoolVar(&bastionVM, "j", false, "Use Bastion VM as jump box")
 
 	return cmd
 }

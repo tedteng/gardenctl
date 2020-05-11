@@ -277,7 +277,8 @@ func (a *AwsInstanceAttribute) createBastionHostInstance() {
 				}
 			}
 			a.BastionIP = ip
-
+			
+			// check instance-status.status,Values=ok before SSh"
 			if a.BastionIP != "" {
 				fmt.Println("Waiting 60 seconds until ports are open.")
 				for attemptCnt < 90 {

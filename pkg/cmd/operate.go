@@ -282,6 +282,12 @@ func operate(provider, arguments string) {
 		if err != nil {
 			os.Exit(2)
 		}
+	case "pod":
+        err = ExecCmd(nil, arguments, false)
+        if err != nil {
+            fmt.Println("operate failed")
+            os.Exit(2)
+		}
 	}
 }
 
